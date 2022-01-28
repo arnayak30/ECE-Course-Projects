@@ -94,28 +94,96 @@ GET_NEXT
 	ADD R1,R1,#1		; point to next character in string
 	BRnzp COUNTLOOP		; go to start of counting loop
 
+; partners: austina5, akarshp2
 
+; INTRODUCTION
+; The purpose of this program is to look at a string of characters and display how many instances
+; of each alphanumeric character (letters A-Z and numbers 1-9) are present.
+; The process starts by looking at the histogram data and simply checking what characters are respresented and
+; printing it to the monitor in an organized format. The histogram data is in hexidecimal notation and
+; needs to be divided into groups of four bits in order to see what ASCII character should be displayed.
+; Once all ASCII characters are checked for their occurrences in the given string, the program will be halted.
 
 PRINT_HIST
 
-; you will need to insert your code to print the histogram here
+; Table of Registers
+; R0 will hold the value that is going to be printed to the monitor.
+; R1 holds the value of the next ASCII character to be printed.
+; R2 is the data that is found in the histogram address list (referenced in the explanation for R7)
+; R3 tells the user how many characters have been checked and printed to the screen.
+; R4 is a digit counter
+; R5 is a bit counter
+; R6 stores the start of the histogram data addresses
+; R7 stores the value of one of the groups of four digits from the histogram data.
 
-; do not forget to write a brief description of the approach/algorithm
-; for your implementation, list registers used in this part of the code,
-; and provide sufficient comments
+
+INIT 			LD R3, NUM_BINS		; This section initiaizes values for R3, R1, and R6, which are registers that control 
+                LD R1, AT_CHAR      ; what and how many characters gets printed to the monitor.		
+				LD R6, HIST_ADDR	
+
+NUM_PRINT		ADD R3, R3, #0		; This section checks whether every alphanumeric character has been accounted for and also, ensures that the
+				BRz DONE			; formatting of what is being printed is correct.
+				ADD R0, R1, #0		 
+				OUT				
+				LD R0, SPACE_CHAR	
+				OUT					
+				LDR R2, R6, #0		
+				LD R4, DIGITS		
+	
+OUTERLOOP		ADD R4, R4, #0		; This section is responsible for checking whether all of the digits of the value in the histogram address
+				BRz NEXT			; have accounted for before moving onto the next memory location.
+				LD R5, DIGITS		
+				AND R7, R7, #0		
+
+INNERLOOP		ADD R5, R5, #0		; This section checks whether the data (in groups of 4) being passed is negative or positive.
+				BRz PRINT_CHAR		; Once it does this, either '1' or '0' will be added to the digits register. Once all four digits in the group are checked and 
+				ADD R7, R7, R7		; added over, the program will then move on to the PRINT_CHAR section of the code.
+				ADD R2, R2, #0		
+				BRzp #1				
+				ADD R7, R7, #1		
+				ADD R2, R2, R2		
+				ADD R5, R5, #-1		
+				BRnzp INNERLOOP 		
+	
+PRINT_CHAR		ADD R0, R7, #-9		; This section determines what ASCII character is being represented by the four digits in the data. 				
+				BRnz #2				; If the decimal value of the binary data is less than or equal to 9, then #48 will be added to the data 
+				LD R0, SUBTEN_CHAR	; because all such values represent the ASCII codes for numbers 0 through 9.
+				BRnzp #1			
+				LD R0, ZERO_CHAR	
+				ADD R0, R7, R0		
+				OUT					
+				ADD R4, R4, #-1		
+				BRnzp OUTERLOOP 		
+
+NEXT			LD R0, ASCII_LINE	; This section makes sure that the program prints to the next line after one 	
+				OUT					; specific alphanumeric character has been checked and printed.
+				ADD R3, R3, #-1		
+				ADD R1, R1, #1		
+				ADD R6, R6, #1		
+				BRnzp NUM_PRINT		
+
+
+DONE			HALT				; This section ensures that the program will stop running after all characters have been checked and printed to the screen.
 
 
 
-DONE	HALT			; done
 
 
 ; the data needed by the program
-NUM_BINS	.FILL #27	; 27 loop iterations
-NEG_AT		.FILL xFFC0	; the additive inverse of ASCII '@'
-AT_MIN_Z	.FILL xFFE6	; the difference between ASCII '@' and 'Z'
-AT_MIN_BQ	.FILL xFFE0	; the difference between ASCII '@' and '`'
-HIST_ADDR	.FILL x3F00     ; histogram starting address
-STR_START	.FILL x4000	; string starting address
+NUM_BINS		.FILL #27	; 27 loop iterations
+NEG_AT			.FILL xFFC0	; the additive inverse of ASCII '@'
+AT_MIN_Z		.FILL xFFE6	; the difference between ASCII '@' and 'Z'
+AT_MIN_BQ		.FILL xFFE0	; the difference between ASCII '@' and '`'
+HIST_ADDR		.FILL x3F00 ; histogram starting address
+STR_START		.FILL x4000	; string starting address
+SUBTEN_CHAR		.FILL #55	; Needed to represent the ASCII values of letters "A-Z"
+ZERO_CHAR		.FILL #48	; ASCII value for '0'
+SPACE_CHAR  	.FILL x0020 ; ASCII for ' '
+AT_CHAR			.FILL x0040 ; ASCII value for '@'
+DIGITS			.FILL #4	; Tells us how many times the INNERLOOP should be run
+ASCII_LINE    	.FILL x000A ; ASCII value for the next line
+
+
 
 ; for testing, you can use the lines below to include the string in this
 ; program...
@@ -127,4 +195,4 @@ STR_START	.FILL x4000	; string starting address
 	; the directive below tells the assembler that the program is done
 	; (so do not write any code below it!)
 
-	.END
+	.END;
