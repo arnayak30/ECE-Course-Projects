@@ -1,17 +1,18 @@
 Compilation Results: 
 ********************
-main.c: In function ‘main’:
-main.c:27:4: error: expected ‘;’ before ‘return’
-    return ret;
-    ^
-main.c:13:14: error: variable ‘ret’ set but not used [-Werror=unused-but-set-variable]
-    int a, b, ret;
-              ^
-cc1: all warnings being treated as errors
-Compilation unsuccessful. Stopping.
+Compilation successful
+
+
+Testing is_prime
+*****************
+Testing semiprimes program
+**************************
+Test 1 return incorrect
+Test 1 semiprimes passed
+
 Failed nightly test!!!
 This nightly test is focusing on compilation error not functionality test.
 This nightly report only tests on the released testcases.
 There are many hidden edge testcase for the MP. Please test it yourselve.
 HIGHLY RECOMMEND YOU TO START YOUR MP EARLY!!!!!!!
-Timestamp: 2022-02-22_00:15:54
+Timestamp: 2022-02-23_03:52:22
