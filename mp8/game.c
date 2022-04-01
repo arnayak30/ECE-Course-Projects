@@ -1,5 +1,9 @@
 #include "game.h"
 
+//NET IDs: austina5, akarshp2
+
+//INTRODUCTION: This program was made to recreate the popular video game of 2048. This is a game where you use the a,s,w, and d keys to move each pointer right, down, up, or left. When moving the pointer if 2 of them have the same value in the same direction that you went, they will combine to be double the original value. The goal of the game is to get one of the blocks to have a total of 2048, but as you continue to combine the cells they will add to your score which is another measurement of achievement in the game. The program contains 8 different functions. These are the create_game,  remake_game, legal_move_check function, get_cell, move_a, move_s, move_w, and move_d. These each serve different purposes to make sure that the game functions properly. The create_game function returns a pointer to a game structure. The remake_game function works almost identically to the create_game function. The legal_move function checks if you can make the move without going off of the board. The move_ functions moves the pointer and adds the values of the boxes if they are identical. The legal_move_check function checks if the game board is filled up and there are no 2 identical pointers adjacent to each other.
+
 
 game * make_game(int rows, int cols)
 /*! Create an instance of a game structure with the given number of rows
@@ -15,8 +19,15 @@ game * make_game(int rows, int cols)
 
     //YOUR CODE STARTS HERE:  Initialize all other variables in game struct
 
+    (*mygame).rows = rows; //Initializes the rows of the game board
+    (*mygame).cols = cols; //Initializes the cols of the game board
+    (*mygame).score = 0; //Initializes the score of the game board
 
-    return mygame;
+    for (int i = 0; i < (rows*cols); i++){ //Iterates through the entire game board and sets each cell to be equal to -1
+      *((*mygame).cells + i) = -1;
+    }
+    
+    return mygame; //Returns the initialized game board
 }
 
 void remake_game(game ** _cur_game_ptr,int new_rows,int new_cols)
@@ -32,6 +43,13 @@ void remake_game(game ** _cur_game_ptr,int new_rows,int new_cols)
 	(*_cur_game_ptr)->cells = malloc(new_rows*new_cols*sizeof(cell));
 
 	 //YOUR CODE STARTS HERE:  Re-initialize all other variables in game struct
+	(**_cur_game_ptr).rows = new_rows; //Resets the game board with a new number of rows
+        (**_cur_game_ptr).cols = new_cols; //Resets the game board with a new number of cols
+        (**_cur_game_ptr).score = 0; //Resets the score of the game
+
+        for (int i = 0; i < new_rows*new_cols; i++){ //Resets every cell of the game board to be equal to -1
+	  *((**_cur_game_ptr).cells + i) = -1;
+	}
 
 	return;	
 }
@@ -54,8 +72,15 @@ cell * get_cell(game * cur_game, int row, int col)
 */
 {
     //YOUR CODE STARTS HERE
+    int game_width = (*cur_game).cols; //Sets the horizontal size of the board
+    int game_length = (*cur_game).rows; //Sets the vertical size of the board
+    int index = row*game_width + col; //Position of the cell
 
-    return NULL;
+    if (row >= game_length || row < 0 || col >= game_width || col < 0){ //Checks whether the cell is within the bounds of the board
+      return NULL;
+    }
+
+    return (*cur_game).cells + index; //Returns a pointer to the corresponding cell on the game board
 }
 
 int move_w(game * cur_game)
@@ -67,28 +92,211 @@ int move_w(game * cur_game)
 */
 {
     //YOUR CODE STARTS HERE
+  int valid_move = 0; //Checks if a move has been made
+  int empty_pos = 0; //Position of an empty cell
+  int empty_loc = 0; //Essentially a boolean that checks whether a cell is empty or not
+  int last_combo; //Makes sure that the last combination is not equal to 1 less than the position of an empty cell
+  for (int j = 0; j < (*cur_game).cols; j++){ //Iterates through the columns of the board
 
-    return 1;
+    last_combo = -1;
+
+    for (int i = 0; i < (*cur_game).rows; i++){ //Iterates through the rows of the board
+      
+      if (*((*cur_game).cells + i*(*cur_game).cols+j) != -1){ //Looks for the first non-empty cell
+
+	empty_loc = 0;
+	
+        for (empty_pos = 0; empty_pos < i; empty_pos++){ //Iterates through the start of the column to the position of the non-empty cell
+	  
+	  if (*((*cur_game).cells + empty_pos*(*cur_game).cols+j) == -1){ //Finds an empty cell from the start of the column to the position of the non-empty cell
+	    empty_loc = 1;
+	    break;
+	  }
+	}
+        
+        if (empty_loc == 1){ //If an empty cell has been found, then the non-empty cell with replace the empty cell. The non-empty cell will be changed to -1 after.
+
+	  *((*cur_game).cells + empty_pos*(*cur_game).cols+j) = *((*cur_game).cells + i*(*cur_game).cols+j);
+          *((*cur_game).cells + i*(*cur_game).cols+j) = -1;
+          valid_move = 1;
+
+	}
+
+	if (last_combo != (empty_pos-1)){
+
+	  if (*((*cur_game).cells + empty_pos*(*cur_game).cols+j) == *((*cur_game).cells + (empty_pos-1)*(*cur_game).cols + j)){ 
+            //Checks if the non-empty cell is equal to the one above it
+
+	    *((*cur_game).cells + (empty_pos-1)*(*cur_game).cols+j) *= 2; //Adds both of the cells together and replaces its value
+            (*cur_game).score += *((*cur_game).cells + (empty_pos-1)*(*cur_game).cols+j); //Adds the sum to the total score
+            *((*cur_game).cells + empty_pos*(*cur_game).cols+j) = -1; //Resets the non-empty cell to be equal to 0
+            last_combo = empty_pos-1;
+            valid_move = 1;
+	  }
+	}
+      }
+    }
+  }   
+
+    return valid_move;
 };
 
 int move_s(game * cur_game) //slide down
 {
     //YOUR CODE STARTS HERE
+    //See the move_w function to understand the movement algorithm.
+    int valid_move = 0;
+    int empty_pos = 0;
+    int last_combo;
+    int empty_loc;
+  for (int j = 0; j < (*cur_game).cols; j++){
 
-    return 1;
+    last_combo = -1;
+
+    for (int i = (*cur_game).rows-1; i >= 0; i--){
+      
+      if (*((*cur_game).cells + i*(*cur_game).cols+j) != -1){
+
+	empty_loc = 0;
+	
+        for (empty_pos = (*cur_game).rows-1; empty_pos > i; empty_pos--){
+	  
+	  if (*((*cur_game).cells + empty_pos*(*cur_game).cols+j) == -1){
+	    empty_loc = 1;
+	    break;
+	  }
+	}
+        
+        if (empty_loc == 1){
+
+	  *((*cur_game).cells + empty_pos*(*cur_game).cols+j) = *((*cur_game).cells + i*(*cur_game).cols+j);
+          *((*cur_game).cells + i*(*cur_game).cols+j) = -1;
+          valid_move = 1;
+
+	}
+
+	if (last_combo != (empty_pos+1)){
+
+	  if (*((*cur_game).cells + empty_pos*(*cur_game).cols+j) == *((*cur_game).cells + (empty_pos+1)*(*cur_game).cols + j)){
+
+	    *((*cur_game).cells + (empty_pos+1)*(*cur_game).cols+j) *= 2;
+            (*cur_game).score += *((*cur_game).cells + (empty_pos+1)*(*cur_game).cols+j);
+            *((*cur_game).cells + empty_pos*(*cur_game).cols+j) = -1;
+            last_combo = empty_pos+1;
+            valid_move = 1;
+	  }
+	}
+      }
+    }
+  }   
+
+  return valid_move;
 };
 
 int move_a(game * cur_game) //slide left
 {
     //YOUR CODE STARTS HERE
+    //See the move_w function to understand the movement algorithm
+    int valid_move = 0;
+    int last_combo = 0;
+    int empty_pos = 0;
+  for (int i = 0; i < (*cur_game).rows; i++){
 
-    return 1;
+    last_combo = -1;
+
+    for (int j = 0; j < (*cur_game).cols; j++){
+      
+      if (*((*cur_game).cells + i*(*cur_game).cols+j) != -1){
+
+	int empty_loc = 0;
+	
+        for (empty_pos = 0; empty_pos < j; empty_pos++){
+	  
+	  if (*((*cur_game).cells + i*(*cur_game).cols+empty_pos) == -1){
+
+	    empty_loc = 1;
+	    break;
+
+	  }
+	}
+        
+        if (empty_loc == 1){
+
+	  *((*cur_game).cells + i*(*cur_game).cols+empty_pos) = *((*cur_game).cells + i*(*cur_game).cols+j);
+          *((*cur_game).cells + i*(*cur_game).cols+j) = -1;
+          valid_move = 1;
+
+	}
+
+	if (last_combo != (empty_pos-1)){
+
+	  if (*((*cur_game).cells + i*(*cur_game).cols+empty_pos) == *((*cur_game).cells + i*(*cur_game).cols + (empty_pos-1))){
+
+	    *((*cur_game).cells + i*(*cur_game).cols+(empty_pos-1)) *= 2;
+            (*cur_game).score += *((*cur_game).cells + i*(*cur_game).cols+(empty_pos-1));
+            *((*cur_game).cells + i*(*cur_game).cols+empty_pos) = -1;
+            last_combo = empty_pos-1;
+            valid_move = 1;
+	  }
+	}
+      }
+    }
+  }   
+
+    return valid_move;
 };
 
 int move_d(game * cur_game){ //slide to the right
     //YOUR CODE STARTS HERE
+    //See the move_s algorithm to understand the movement algorithm.
+    int valid_move = 0;
+    int empty_pos = 0;
+    int last_combo = 0;
+    int empty_loc = 0;
+  for (int i = 0; i < (*cur_game).rows; i++){
 
-    return 1;
+    last_combo = -1;
+
+    for (int j = (*cur_game).cols-1; j >= 0; j--){
+      
+      if (*((*cur_game).cells + i*(*cur_game).cols+j) != -1){
+
+	empty_loc = 0;
+	
+        for (empty_pos = (*cur_game).cols-1; empty_pos >= j; empty_pos--){
+	  
+	  if (*((*cur_game).cells + i*(*cur_game).cols+empty_pos) == -1){
+
+	    empty_loc = 1;
+	    break;
+
+	  }
+	}
+        
+        if (empty_loc == 1){
+
+	  *((*cur_game).cells + i*(*cur_game).cols+empty_pos) = *((*cur_game).cells + i*(*cur_game).cols+j);
+          *((*cur_game).cells + i*(*cur_game).cols+j) = -1;
+          valid_move = 1;
+
+	}
+
+	if (last_combo != (empty_pos+1)){
+
+	  if (*((*cur_game).cells + i*(*cur_game).cols+empty_pos) == *((*cur_game).cells + i*(*cur_game).cols + (empty_pos+1))){
+
+	    *((*cur_game).cells + i*(*cur_game).cols+(empty_pos+1)) *= 2;
+            (*cur_game).score += *((*cur_game).cells + i*(*cur_game).cols+(empty_pos+1));
+            *((*cur_game).cells + i*(*cur_game).cols+empty_pos) = -1;
+            last_combo = empty_pos+1;
+            valid_move = 1;
+	  }
+	}
+      }
+    }
+  }   
+
+    return valid_move;
 };
 
 int legal_move_check(game * cur_game)
@@ -98,8 +306,41 @@ int legal_move_check(game * cur_game)
  */
 {
     //YOUR CODE STARTS HERE
+  int row_size = (*cur_game).rows; //Size of rows
+  int col_size = (*cur_game).cols; //Sizes of columns
+  int my_cell; //Gets the value at a certain index on the board
+  
+  for (int i = 0; i < row_size; i++){
+    for (int j = 0; j < col_size; j++){
+      my_cell = *get_cell(cur_game, j, i);
 
-    return 1;
+
+      if (my_cell == -1){ //Checks if the cell is empty
+	return 1;
+      }
+
+      cell* above = get_cell(cur_game, j-1, i); //Finds the value of the cell above the cell currently being checked
+      cell* below = get_cell(cur_game, j+1, i); //Finds the value of the cell below the cell currently being checked
+      cell* left = get_cell(cur_game, j, i-1); //Finds the value of the cell left of the cell currently being checked
+      cell* right = get_cell(cur_game, j, i+1); //Finds the value of the cell right of the cell currently being checked
+
+      //This next section checks whether the current cell being checked can be combined with the cells surrounding it.
+      if (above != NULL && *above == my_cell){ 
+	return 1;
+      }
+      if (below != NULL && *below == my_cell){
+	return 1;
+      }
+      if (left != NULL && *left == my_cell){
+	return 1;
+      }
+      if (right != NULL && *right == my_cell){
+	return 1;
+      }
+    }
+  }
+
+    return 0;
 }
 
 
