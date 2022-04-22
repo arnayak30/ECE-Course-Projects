@@ -1,5 +1,7 @@
 #include "floorplan.h"
 
+//NET IDs: austina5, akarshp2
+
 // Global variables. The global variables will be effectice after the input has been parsed
 // by calling the procedure read_module.
 int num_modules;                                            // # of input modules.
@@ -55,21 +57,36 @@ void floorplan(const char file[]) {
 // Function: is_leaf_node
 // Return 1 if the given slicing tree node is a leave node, and 0 otherwise.
 int is_leaf_node(node_t* ptr) {
+
   // TODO: (remember to modify the return value appropriately)
+  if ((*ptr).left == NULL && (*ptr).right == NULL){ //Checks if the node has no children (if so, then it is a leaf node)
+    return 1;
+  }
   return 0;
 }
 
 // Function: is_internal_node
 // Return 1 if the given slicing tree node is an internal node, and 0 otherwise.
 int is_internal_node(node_t* ptr) {
+
   // TODO: (remember to modify the return value appropriately)
+  if ((*ptr).left != NULL || (*ptr).right != NULL){ //Checks if the node has a child (leaf)
+    return 1;
+  }
   return 0;
 }
 
 // Function: is_in_subtree
 // Return 1 if the given subtree rooted at node 'b' resides in the subtree rooted at node 'a'.
 int is_in_subtree(node_t* a, node_t* b) {
+
   // TODO: (remember to modify the return value appropriately)
+  if (a == NULL){ //Checks if a base case has been reached
+    return 0;
+  }
+  if (is_in_subtree(a->left, b) == 1 || is_in_subtree(a->right, b) == 1 || a == b){ //Recursive statement that checks if b is a node that is a part of a and below it.
+    return 1;
+  }
   return 0;
 }
 
@@ -78,6 +95,9 @@ int is_in_subtree(node_t* a, node_t* b) {
 // and the width of the modules are swapped.
 void rotate(node_t* ptr) {
   // TODO: 
+  int placeHold =(*ptr).module->h; //Swaps the height and width of the modules using a temporary placeholder.
+  (*ptr).module->h = (*ptr).module->w;
+  (*ptr).module->w = placeHold;
 }
 
 // Procedure: recut
@@ -89,6 +109,12 @@ void recut(node_t* ptr) {
   assert(ptr->module == NULL && ptr->cutline != UNDEFINED_CUTLINE);
 
   // TODO:
+  if ((*ptr).cutline != V){ //If the original cutline is not a vertical cutline, then it should be changed to be a vertical cutline.
+    (*ptr).cutline = V;     //If else, then it should be changed to a horizontal cutline.
+  }
+  else{
+    (*ptr).cutline = H;
+  }
   return;
 }
 
@@ -100,6 +126,9 @@ void swap_module(node_t* a, node_t* b) {
   assert(b->module != NULL && b->cutline == UNDEFINED_CUTLINE);
 
   // TODO:
+  module_t* placeHold = (*b).module; //Swaps the modules between two leaf nodes using a temporary placeholder.
+  (*b).module = (*a).module;
+  (*a).module = placeHold;
 }
 
 // Procedure: swap_topology
@@ -113,6 +142,30 @@ void swap_topology(node_t* a, node_t* b) {
   assert(a->parent != NULL && b->parent != NULL);
  
   // TODO:
+  node_t* placeHold = a;
+  node_t* parentB = (*b).parent; //Stores the pointer to the parent of node B.
+
+  //Changes the parent of node B to be the parent of node A and changes the left or right child of a to point to b.
+  if ((*a).parent->right == a){ //Right Child
+    (*a).parent->right = b;
+    (*b).parent = (*a).parent;
+  }
+  else if ((*a).parent->left == a){ //Left Child
+    (*a).parent->left = b;
+    (*b).parent = (*a).parent;
+  }
+
+  //Changes the parent of node A to be the parent of node B and changes the left or right child of b to point to a.
+  if ((*parentB).right == b){ //Right Child
+    (*parentB).right = placeHold;
+    (*placeHold).parent = parentB;
+  }
+  else if ((*parentB).left == b){ //Left Child
+    (*parentB).left = placeHold;
+    (*placeHold).parent = parentB;
+  }
+  
+  return;
 }
 
 // Procedure: get_expression
@@ -148,6 +201,20 @@ void postfix_traversal(node_t* ptr, int* nth, expression_unit_t* expression) {
   if(ptr == NULL) return;
 
   // TODO:
+  postfix_traversal((*ptr).left, nth, expression);
+  postfix_traversal((*ptr).right, nth, expression);
+
+  if ((*ptr).module == NULL){ //If the node is a cutline, then store it the cutline in the expression array.
+    expression[*nth].module = NULL;
+    expression[*nth].cutline = (*ptr).cutline;
+  }
+  else{ //If else (node is a module), store it into the expression array.
+    expression[*nth].module = (*ptr).module;
+    expression[*nth].cutline = UNDEFINED_CUTLINE;
+  }
+
+  *nth+=1; //Increments the index of the expression array.
+  return;
 }
 
 // get_total_resource
@@ -155,8 +222,16 @@ void postfix_traversal(node_t* ptr, int* nth, expression_unit_t* expression) {
 int get_total_resource(node_t* ptr)
 {
   // TODO:
+  int total = 0;
+  if (ptr != NULL){ //Checks if the bottom has been reached
+    if (is_leaf_node(ptr)){ //Add to the total if the node is a leaf.
+      total += (*ptr).module->resource;
+    }
+    total += get_total_resource((*ptr).left); //Adds the sum of the left and right sub-trees to the total.
+    total += get_total_resource((*ptr).right);
+  }
 
-  return 0;
+  return total; //Returns the sum of all resources for the module.
 }
 
 // Procedure: init_slicing_tree
@@ -191,7 +266,31 @@ node_t* init_slicing_tree(node_t* par, int n) {
   assert(n >= 0 && n < num_modules);
 
   // TODO:
-  return NULL;
+  node_t* pos = (node_t*) malloc(sizeof(node_t));
+  (*pos).parent = par;
+  
+  if (n == (num_modules-1)){ //BASE CASE: Checks if the program has reached the final module.
+    (*pos).left = NULL;
+    (*pos).right = NULL;
+    (*pos).cutline = UNDEFINED_CUTLINE;
+    (*pos).module = &modules[n];
+    return pos;
+  }
+  
+  //RECURSIVE CASE: Sets cutline values for pos.
+  (*pos).module = NULL;
+  (*pos).cutline = V;
+
+  (*pos).right = (node_t*) malloc(sizeof(node_t));
+  (*pos).right->left = NULL;
+  (*pos).right->right = NULL;
+  (*pos).right->parent = pos;
+  (*pos).right->cutline = UNDEFINED_CUTLINE;
+  (*pos).right->module = &modules[n];
+  
+  (*pos).left = init_slicing_tree(pos,n+1);
+
+  return pos;
 }
 
 
