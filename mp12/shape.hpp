@@ -7,7 +7,9 @@
 #include<algorithm>
 #include<list>
 #include<fstream>
-#include <iomanip>    
+#include <iomanip>
+
+//NET IDs: austina5, akarshp2
 
 using namespace std;
 
@@ -17,7 +19,7 @@ using namespace std;
 class Shape{
 public:
 	  //Base class' constructor should be called in derived classes'
-	  //constructor to initizlize Shape's private variable 
+	  //constructor to initialize Shape's private variable 
   	Shape(string name){
   	  name_ = name;
   	};
