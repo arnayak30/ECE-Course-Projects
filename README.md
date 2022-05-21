@@ -1,4 +1,4 @@
-Details about the Folders in this Repository:
+#Details about the Folders in this Repository:
 
 MP1 - Printing a histogram to the monitor that details the number of occurrences of each letter in the alphabet in a given string. (LC3 Assembly Language)
 
